@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CashFlow">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>CashFlow Manager</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d47;
+    --accent: #3b82f6;
+    --accent2: #10b981;
+    --danger: #ef4444;
+    --warn: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --mono: 'Space Mono', monospace;
+    --display: 'Syne', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--display);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Nav */
+  #nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(10,14,26,0.95);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    padding: 10px 4px 8px; gap: 3px;
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-family: var(--display);
+    font-size: 10px; font-weight: 600; letter-spacing: 0.05em;
+    transition: color 0.2s;
+  }
+  .nav-btn.active { color: var(--accent); }
+  .nav-btn svg { width: 22px; height: 22px; }
+
+  /* Pages */
+  .page { display: none; padding: 16px 16px 100px; max-width: 600px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .card-sm {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+
+  /* Header */
+  .page-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; padding-top: 8px;
+  }
+  .page-title {
+    font-size: 22px; font-weight: 800; letter-spacing: -0.03em;
+    color: var(--text);
+  }
+  .page-subtitle { font-size: 11px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+
+  /* Section labels */
+  .section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted);
+    margin: 20px 0 10px;
+  }
+
+  /* Inputs */
+  .field {
+    display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px;
+  }
+  .field label {
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .field input, .field select, .field textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--display);
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--accent);
+  }
+  .field select option { background: var(--surface); }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px 18px; border-radius: 10px; border: none; cursor: pointer;
+    font-family: var(--display); font-weight: 700; font-size: 13px;
+    letter-spacing: 0.03em; transition: all 0.15s; white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { filter: brightness(1.15); }
+  .btn-success { background: var(--accent2); color: #fff; }
+  .btn-success:hover { filter: brightness(1.15); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-ghost {
+    background: transparent; color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-sm { padding: 6px 12px; font-size: 11px; border-radius: 8px; }
+  .btn-full { width: 100%; }
+
+  /* Badges */
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 8px; border-radius: 20px;
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .badge-pending { background: rgba(245,158,11,0.15); color: var(--warn); }
+  .badge-completed { background: rgba(16,185,129,0.12); color: var(--accent2); }
+  .badge-overdue { background: rgba(239,68,68,0.15); color: var(--danger); }
+
+  /* Transaction type chips */
+  .type-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px; border-radius: 6px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .type-credit  { background: rgba(239,68,68,0.12); color: #f87171; }
+  .type-withdrawal { background: rgba(245,158,11,0.12); color: #fbbf24; }
+  .type-income  { background: rgba(16,185,129,0.12); color: #34d399; }
+  .type-transfer { background: rgba(99,102,241,0.12); color: #a5b4fc; }
+  .type-investment { background: rgba(59,130,246,0.12); color: #60a5fa; }
+
+  /* Amount display */
+  .amount {
+    font-family: var(--mono); font-weight: 700;
+  }
+  .amount-neg { color: var(--danger); }
+  .amount-pos { color: var(--accent2); }
+  .amount-neutral { color: var(--text); }
+
+  /* Balance row */
+  .balance-row {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  /* Warning row */
+  .warn-row {
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 10px; padding: 10px 12px;
+    margin-bottom: 6px;
+    font-size: 12px; color: var(--danger);
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* Summary tiles */
+  .tile {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 16px;
+    flex: 1;
+  }
+  .tile-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 6px; }
+  .tile-value { font-family: var(--mono); font-size: 18px; font-weight: 700; }
+  .tile-value.pos { color: var(--accent2); }
+  .tile-value.neg { color: var(--danger); }
+  .tile-value.accent { color: var(--accent); }
+
+  /* Modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    z-index: 200; align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    padding: 20px 20px calc(24px + env(safe-area-inset-bottom));
+    width: 100%; max-width: 600px;
+    max-height: 90vh; overflow-y: auto;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal-handle {
+    width: 36px; height: 4px; background: var(--border);
+    border-radius: 2px; margin: 0 auto 16px;
+  }
+  .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 16px; }
+
+  /* Simulation row */
+  .sim-row {
+    border-left: 3px solid var(--border);
+    padding: 10px 12px;
+    margin-bottom: 2px;
+    background: var(--surface2);
+    border-radius: 0 10px 10px 0;
+    transition: background 0.15s;
+  }
+  .sim-row.danger { border-left-color: var(--danger); background: rgba(239,68,68,0.05); }
+  .sim-row.today { border-left-color: var(--accent); }
+  .sim-row-date { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .sim-row-desc { font-size: 13px; font-weight: 600; margin: 2px 0; }
+  .sim-row-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; flex-wrap: wrap; gap: 4px; }
+
+  /* Toast */
+  #toast {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-80px);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 10px 18px;
+    font-size: 13px; font-weight: 600; color: var(--text);
+    z-index: 999; transition: transform 0.3s ease;
+    white-space: nowrap; max-width: 90vw;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Divider */
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* Scrollable tags */
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .tag {
+    padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .tag.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* Top header bar */
+  #topbar {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(10,14,26,0.9); backdrop-filter: blur(12px);
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  #topbar .logo { font-size: 17px; font-weight: 800; letter-spacing: -0.03em; }
+  #topbar .logo span { color: var(--accent); }
+
+  /* Progress bar */
+  .progress-bar {
+    height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 8px;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 2px; transition: width 0.5s;
+  }
+
+  /* Flex utils */
+  .flex { display: flex; }
+  .flex-col { flex-direction: column; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .gap-2 { gap: 8px; }
+  .gap-3 { gap: 12px; }
+  .flex-1 { flex: 1; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .w-full { width: 100%; }
+
+  /* Animated number */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeIn 0.3s ease; }
+
+  /* Empty state */
+  .empty {
+    text-align: center; padding: 32px 16px; color: var(--muted);
+  }
+  .empty-icon { font-size: 36px; margin-bottom: 8px; }
+  .empty-text { font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div id="topbar">
+  <div>
+    <div class="logo">Cash<span>Flow</span></div>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:8px;">
+    <button class="btn btn-ghost btn-sm" onclick="exportData()">↑ エクスポート</button>
+    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('importFile').click()">↓ インポート</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ===== PAGE: ダッシュボード ===== -->
+<div id="page-dashboard" class="page active">
+  <div class="page-header">
+    <div>
+      <div class="page-title">ダッシュボード</div>
+      <div class="page-subtitle" id="now-display"></div>
+    </div>
+  </div>
+
+  <!-- Summary tiles -->
+  <div class="grid-2" id="summary-tiles"></div>
+
+  <!-- Banks -->
+  <div class="section-label">銀行口座</div>
+  <div id="bank-cards"></div>
+
+  <!-- Brokerages -->
+  <div class="section-label">証券口座</div>
+  <div id="brokerage-cards"></div>
+
+  <!-- Warnings -->
+  <div id="warnings-area"></div>
+</div>
+
+<!-- ===== PAGE: シミュレーション ===== -->
+<div id="page-simulation" class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">残高推移</div>
+      <div class="page-subtitle">未来の残高シミュレーション</div>
+    </div>
+  </div>
+
+  <!-- Bank filter tabs -->
+  <div class="section-label">口座フィルター</div>
+  <div class="tags" id="sim-bank-tabs"></div>
+
+  <div class="section-label" style="margin-top:16px;">取引一覧（最新50件）</div>
+  <div id="sim-list"></div>
+</div>
+
+<!-- ===== PAGE: 取引追加 ===== -->
+<div id="page-add" class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">取引を追加</div>
+      <div class="page-subtitle">新しい取引を記録</div>
+    </div>
+  </div>
+
+  <!-- Type selector -->
+  <div class="section-label">取引タイプ</div>
+  <div class="tags" id="type-tabs">
+    <div class="tag active" data-type="credit_card" onclick="selectType('credit_card')">💳 クレカ返済</div>
+    <div class="tag" data-type="withdrawal" onclick="selectType('withdrawal')">🏧 出金</div>
+    <div class="tag" data-type="income" onclick="selectType('income')">💰 収入</div>
+    <div class="tag" data-type="transfer" onclick="selectType('transfer')">↔️ 振替</div>
+    <div class="tag" data-type="investment" onclick="selectType('investment')">📈 投資</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Common fields -->
+  <div class="field">
+    <label>日付</label>
+    <input type="date" id="tx-date">
+  </div>
+  <div class="field">
+    <label>金額（円）</label>
+    <input type="number" id="tx-amount" placeholder="0" min="0">
+  </div>
+
+  <!-- Type-specific fields -->
+  <div id="type-fields"></div>
+
+  <button class="btn btn-primary btn-full" onclick="addTransaction()" style="margin-top:8px;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    取引を追加
+  </button>
+</div>
+
+<!-- ===== PAGE: 設定 ===== -->
+<div id="page-settings" class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">設定</div>
+      <div class="page-subtitle">口座・カードの管理</div>
+    </div>
+  </div>
+
+  <!-- Banks -->
+  <div class="section-label">銀行口座を追加</div>
+  <div class="card">
+    <div class="flex gap-2" style="flex-wrap:wrap;">
+      <input type="text" id="new-bank-name" placeholder="銀行名（例：三菱UFJ）" class="field" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:10px 12px;font-family:var(--display);font-size:14px;outline:none;min-width:160px;">
+      <input type="number" id="new-bank-balance" placeholder="初期残高" class="field" style="width:120px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:10px 12px;font-family:var(--display);font-size:14px;outline:none;">
+      <button class="btn btn-primary" onclick="addBank()">追加</button>
+    </div>
+  </div>
+
+  <div class="section-label">銀行口座一覧</div>
+  <div id="bank-list-settings"></div>
+
+  <!-- Cards -->
+  <div class="section-label">クレジットカードを追加</div>
+  <div class="card">
+    <div class="flex gap-2" style="flex-wrap:wrap;">
+      <input type="text" id="new-card-name" placeholder="カード名（例：楽天カード）" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:10px 12px;font-family:var(--display);font-size:14px;outline:none;min-width:160px;">
+      <button class="btn btn-primary" onclick="addCard()">追加</button>
+    </div>
+  </div>
+  <div class="section-label">カード一覧</div>
+  <div id="card-list-settings"></div>
+
+  <!-- Brokerages -->
+  <div class="section-label">証券口座を追加</div>
+  <div class="card">
+    <div class="flex gap-2" style="flex-wrap:wrap;">
+      <input type="text" id="new-brokerage-name" placeholder="証券会社名" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:10px 12px;font-family:var(--display);font-size:14px;outline:none;min-width:160px;">
+      <button class="btn btn-primary" onclick="addBrokerage()">追加</button>
+    </div>
+  </div>
+  <div class="section-label">証券口座一覧</div>
+  <div id="brokerage-list-settings"></div>
+
+  <div class="divider"></div>
+  <div class="section-label">危険ゾーン</div>
+  <div class="card">
+    <p style="font-size:13px;color:var(--muted);margin:0 0 12px;">全データを削除します。この操作は元に戻せません。</p>
+    <button class="btn btn-danger btn-sm" onclick="clearAllData()">全データを削除</button>
+  </div>
+</div>
+
+<!-- Edit Balance Modal -->
+<div class="modal-overlay" id="modal-edit-balance">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-edit-title">残高を更新</div>
+    <div class="field">
+      <label>現在の残高（円）</label>
+      <input type="number" id="modal-balance-input" placeholder="0">
+    </div>
+    <div id="modal-extra-fields"></div>
+    <div class="flex gap-2" style="margin-top:8px;">
+      <button class="btn btn-ghost flex-1" onclick="closeModal()">キャンセル</button>
+      <button class="btn btn-primary flex-1" id="modal-save-btn">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<nav id="nav">
+  <button class="nav-btn active" id="nav-dashboard" onclick="showPage('dashboard')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    概要
+  </button>
+  <button class="nav-btn" id="nav-simulation" onclick="showPage('simulation')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    推移
+  </button>
+  <button class="nav-btn" id="nav-add" onclick="showPage('add')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    追加
+  </button>
+  <button class="nav-btn" id="nav-settings" onclick="showPage('settings')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/></svg>
+    設定
+  </button>
+</nav>
+
+<script>
+// ============================================================
+// STATE & STORAGE
+// ============================================================
+let state = {
+  banks: [],
+  cardTypes: ['MUFG NICOS', 'SMBC NL', 'EPOS', 'JCB W'],
+  brokerages: [],
+  transactions: []
+};
+
+let simSelectedBankId = 'all';
+let selectedType = 'credit_card';
+
+function saveState() {
+  localStorage.setItem('cashflow_data', JSON.stringify(state));
+}
+
+function loadState() {
+  const raw = localStorage.getItem('cashflow_data');
+  if (raw) {
+    try {
+      state = JSON.parse(raw);
+      // Ensure arrays exist
+      if (!state.banks) state.banks = [];
+      if (!state.cardTypes) state.cardTypes = ['MUFG NICOS', 'SMBC NL', 'EPOS', 'JCB W'];
+      if (!state.brokerages) state.brokerages = [];
+      if (!state.transactions) state.transactions = [];
+    } catch(e) {}
+  } else {
+    // Initial data
+    state.brokerages = [
+      { id: uid(), name: '松井証券', totalInvestment: 0, currentValuation: 0 },
+      { id: uid(), name: 'SBI証券', totalInvestment: 0, currentValuation: 0 }
+    ];
+    saveState();
+  }
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+// ============================================================
+// DATE HELPERS (JST)
+// ============================================================
+function nowJST() {
+  // Use Intl to get the correct JST datetime regardless of the browser's local timezone
+  const now = new Date();
+  const jstStr = now.toLocaleString('sv-SE', { timeZone: 'Asia/Tokyo' }); // "YYYY-MM-DD HH:MM:SS"
+  return new Date(jstStr);
+}
+
+function todayJST() {
+  const now = new Date();
+  return now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }); // "YYYY-MM-DD"
+}
+
+function formatDate(d) {
+  const [y, m, day] = d.split('-');
+  return `${y}/${m}/${day}`;
+}
+
+function formatAmt(n) {
+  return '¥' + Math.abs(n).toLocaleString('ja-JP');
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'simulation') renderSimulation();
+  if (name === 'settings') renderSettings();
+  if (name === 'add') renderAddForm();
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg, duration = 2200) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), duration);
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  const today = todayJST();
+
+  // Compute predicted balances
+  const predictions = computePredictions();
+
+  // Summary
+  const totalBank = state.banks.reduce((s, b) => s + b.currentBalance, 0);
+  const totalBrokerage = state.brokerages.reduce((s, b) => s + b.currentValuation, 0);
+  const pendingOut = state.transactions
+    .filter(t => t.status === 'pending' && ['credit_card','withdrawal','investment'].includes(t.type))
+    .reduce((s, t) => s + t.amount, 0);
+
+  document.getElementById('now-display').textContent = 'JST ' + new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+
+  document.getElementById('summary-tiles').innerHTML = `
+    <div class="tile">
+      <div class="tile-label">総銀行残高</div>
+      <div class="tile-value accent">¥${totalBank.toLocaleString()}</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">総投資評価額</div>
+      <div class="tile-value pos">¥${totalBrokerage.toLocaleString()}</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">未決済支出</div>
+      <div class="tile-value neg">¥${pendingOut.toLocaleString()}</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">予測最低残高</div>
+      <div class="tile-value ${predictions.minTotal < 0 ? 'neg' : 'pos'}">¥${predictions.minTotal.toLocaleString()}</div>
+    </div>
+  `;
+
+  // Bank cards
+  document.getElementById('bank-cards').innerHTML = state.banks.map(b => {
+    const pred = predictions.byBank[b.id] ?? b.currentBalance;
+    const pct = Math.max(0, Math.min(100, (pred / Math.max(b.currentBalance, 1)) * 100));
+    const color = pred < 0 ? '#ef4444' : pred < 10000 ? '#f59e0b' : '#10b981';
+    return `
+      <div class="card-sm fade-in">
+        <div class="balance-row">
+          <div>
+            <div style="font-weight:700;font-size:14px;">${b.name}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">現在残高</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="amount" style="font-size:17px;">¥${b.currentBalance.toLocaleString()}</div>
+            <div style="font-size:11px;color:${color};margin-top:2px;">予測: ¥${pred.toLocaleString()}</div>
+          </div>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:${pct}%;background:${color};"></div>
+        </div>
+        <div class="flex gap-2" style="margin-top:10px;">
+          <button class="btn btn-ghost btn-sm flex-1" onclick="openEditBank('${b.id}')">残高更新</button>
+          <button class="btn btn-ghost btn-sm" onclick="deleteBank('${b.id}')" style="color:var(--danger);border-color:rgba(239,68,68,0.3);">削除</button>
+        </div>
+      </div>`;
+  }).join('') || '<div class="empty"><div class="empty-icon">🏦</div><div class="empty-text">銀行口座がありません。設定から追加してください。</div></div>';
+
+  // Brokerage cards
+  document.getElementById('brokerage-cards').innerHTML = state.brokerages.map(br => {
+    const gain = br.currentValuation - br.totalInvestment;
+    const gainPct = br.totalInvestment > 0 ? ((gain / br.totalInvestment) * 100).toFixed(1) : '0.0';
+    const gainColor = gain >= 0 ? 'var(--accent2)' : 'var(--danger)';
+    return `
+      <div class="card-sm fade-in">
+        <div class="balance-row">
+          <div>
+            <div style="font-weight:700;font-size:14px;">${br.name}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">累計入金: ¥${br.totalInvestment.toLocaleString()}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="amount" style="font-size:17px;">¥${br.currentValuation.toLocaleString()}</div>
+            <div style="font-size:11px;color:${gainColor};margin-top:2px;">${gain >= 0 ? '+' : ''}¥${gain.toLocaleString()} (${gainPct}%)</div>
+          </div>
+        </div>
+        <div class="flex gap-2" style="margin-top:10px;">
+          <button class="btn btn-ghost btn-sm flex-1" onclick="openEditBrokerage('${br.id}')">評価額更新</button>
+          <button class="btn btn-ghost btn-sm" onclick="deleteBrokerage('${br.id}')" style="color:var(--danger);border-color:rgba(239,68,68,0.3);">削除</button>
+        </div>
+      </div>`;
+  }).join('') || '<div class="empty"><div class="empty-icon">📈</div><div class="empty-text">証券口座がありません</div></div>';
+
+  // Warnings
+  const overdueCount = state.transactions.filter(t => t.status === 'pending' && t.date < today).length;
+  let warnHTML = '';
+  if (overdueCount > 0) {
+    warnHTML += `<div class="warn-row"><span>⚠️</span>${overdueCount}件の取引が期日を過ぎています。<a href="#" onclick="showPage('simulation');return false;" style="color:var(--danger);text-decoration:underline;margin-left:4px;">確認する</a></div>`;
+  }
+  if (predictions.minTotal < 0) {
+    warnHTML += `<div class="warn-row"><span>🔴</span>将来の残高がマイナスになる可能性があります。</div>`;
+  }
+  document.getElementById('warnings-area').innerHTML = warnHTML;
+}
+
+// ============================================================
+// PREDICTIONS
+// ============================================================
+function computePredictions() {
+  const byBank = {};
+  state.banks.forEach(b => { byBank[b.id] = b.currentBalance; });
+
+  const pending = state.transactions
+    .filter(t => t.status === 'pending')
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  for (const tx of pending) {
+    switch(tx.type) {
+      case 'credit_card':
+      case 'withdrawal':
+        if (byBank[tx.bankId] !== undefined) byBank[tx.bankId] -= tx.amount;
+        break;
+      case 'income':
+        if (byBank[tx.bankId] !== undefined) byBank[tx.bankId] += tx.amount;
+        break;
+      case 'transfer':
+        if (byBank[tx.fromBankId] !== undefined) byBank[tx.fromBankId] -= tx.amount;
+        if (byBank[tx.toBankId] !== undefined) byBank[tx.toBankId] += tx.amount;
+        break;
+      case 'investment':
+        if (byBank[tx.bankId] !== undefined) byBank[tx.bankId] -= tx.amount;
+        break;
+    }
+  }
+
+  const minTotal = Object.values(byBank).reduce((s, v) => s + v, 0);
+  return { byBank, minTotal };
+}
+
+// ============================================================
+// SIMULATION
+// ============================================================
+function renderSimulation() {
+  const today = todayJST();
+
+  // Bank filter tabs
+  const tabs = document.getElementById('sim-bank-tabs');
+  tabs.innerHTML = `<div class="tag ${simSelectedBankId === 'all' ? 'active' : ''}" onclick="selectSimBank('all')">すべて</div>` +
+    state.banks.map(b => `<div class="tag ${simSelectedBankId === b.id ? 'active' : ''}" onclick="selectSimBank('${b.id}')">${b.name}</div>`).join('');
+
+  // Get transactions sorted by date, desc, limit 50 for display
+  let txs = [...state.transactions]
+    .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+
+  // Filter by bank
+  if (simSelectedBankId !== 'all') {
+    txs = txs.filter(t => {
+      return t.bankId === simSelectedBankId || t.fromBankId === simSelectedBankId || t.toBankId === simSelectedBankId;
+    });
+  }
+
+  const displayTxs = txs.slice(0, 50);
+
+  // Compute running balance for simulation (chronological)
+  // We simulate from current balances forward
+  const simBalances = {};
+  state.banks.forEach(b => { simBalances[b.id] = b.currentBalance; });
+
+  const chronoTxs = [...state.transactions]
+    .filter(t => t.status === 'pending')
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  // Build balance snapshot per tx
+  const balanceAfter = {};
+  let runningTotal = state.banks.reduce((s, b) => s + b.currentBalance, 0);
+  const snapshots = {};
+  state.banks.forEach(b => { snapshots[b.id] = b.currentBalance; });
+
+  for (const tx of chronoTxs) {
+    const snap = { ...snapshots };
+    switch(tx.type) {
+      case 'credit_card': case 'withdrawal':
+        if (snap[tx.bankId] !== undefined) snap[tx.bankId] -= tx.amount;
+        break;
+      case 'income':
+        if (snap[tx.bankId] !== undefined) snap[tx.bankId] += tx.amount;
+        break;
+      case 'transfer':
+        if (snap[tx.fromBankId] !== undefined) snap[tx.fromBankId] -= tx.amount;
+        if (snap[tx.toBankId] !== undefined) snap[tx.toBankId] += tx.amount;
+        break;
+      case 'investment':
+        if (snap[tx.bankId] !== undefined) snap[tx.bankId] -= tx.amount;
+        break;
+    }
+    Object.assign(snapshots, snap);
+    balanceAfter[tx.id] = { ...snap };
+  }
+
+  if (!displayTxs.length) {
+    document.getElementById('sim-list').innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">取引がありません</div></div>';
+    return;
+  }
+
+  const bankName = id => (state.banks.find(b => b.id === id) || {}).name || id;
+  const brokerageName = id => (state.brokerages.find(b => b.id === id) || {}).name || id;
+
+  document.getElementById('sim-list').innerHTML = displayTxs.map(tx => {
+    const isOverdue = tx.status === 'pending' && tx.date <= today;
+    const isToday = tx.date === today;
+    const isPending = tx.status === 'pending';
+
+    // Type info
+    const typeLabels = {
+      credit_card: '💳 クレカ返済',
+      withdrawal: '🏧 出金',
+      income: '💰 収入',
+      transfer: '↔️ 振替',
+      investment: '📈 投資'
+    };
+    const typeClasses = {
+      credit_card: 'type-credit',
+      withdrawal: 'type-withdrawal',
+      income: 'type-income',
+      transfer: 'type-transfer',
+      investment: 'type-investment'
+    };
+
+    let desc = '';
+    let amtSign = '';
+    switch(tx.type) {
+      case 'credit_card':
+        desc = `${tx.cardName} → ${bankName(tx.bankId)}から引落`;
+        amtSign = '-';
+        break;
+      case 'withdrawal':
+        desc = `${bankName(tx.bankId)}から出金`;
+        amtSign = '-';
+        break;
+      case 'income':
+        desc = `${tx.source || '収入'} → ${bankName(tx.bankId)}`;
+        amtSign = '+';
+        break;
+      case 'transfer':
+        desc = `${bankName(tx.fromBankId)} → ${bankName(tx.toBankId)}`;
+        amtSign = '±';
+        break;
+      case 'investment':
+        desc = `${bankName(tx.bankId)} → ${brokerageName(tx.brokerageId)}`;
+        amtSign = '-';
+        break;
+    }
+
+    const amtColor = tx.type === 'income' ? 'var(--accent2)' : tx.type === 'transfer' ? 'var(--text)' : 'var(--danger)';
+
+    // After-balance for filter
+    const after = balanceAfter[tx.id];
+    let afterDisplay = '';
+    if (after && simSelectedBankId === 'all') {
+      const total = Object.values(after).reduce((s, v) => s + v, 0);
+      afterDisplay = `<span style="font-family:var(--mono);font-size:11px;color:${total < 0 ? 'var(--danger)' : 'var(--muted)'}">合計: ¥${total.toLocaleString()}</span>`;
+    } else if (after && simSelectedBankId !== 'all' && after[simSelectedBankId] !== undefined) {
+      const val = after[simSelectedBankId];
+      afterDisplay = `<span style="font-family:var(--mono);font-size:11px;color:${val < 0 ? 'var(--danger)' : 'var(--muted)'}">残高: ¥${val.toLocaleString()}</span>`;
+    }
+
+    let statusBadge = '';
+    if (tx.status === 'completed') {
+      statusBadge = '<span class="badge badge-completed">完了</span>';
+    } else if (isOverdue) {
+      statusBadge = '<span class="badge badge-overdue">期日超過</span>';
+    } else {
+      statusBadge = '<span class="badge badge-pending">未完了</span>';
+    }
+
+    const completeBtn = isOverdue && isPending
+      ? `<button class="btn btn-success btn-sm" onclick="completeTransaction('${tx.id}')">✓ 完了</button>`
+      : '';
+    const deleteBtn = `<button class="btn btn-ghost btn-sm" onclick="deleteTransaction('${tx.id}')" style="color:var(--danger);">削除</button>`;
+
+    const dangerClass = isPending && after && Object.values(after).reduce((s, v) => s + v, 0) < 0 ? 'danger' : '';
+    const todayClass = isToday ? 'today' : '';
+
+    return `
+      <div class="sim-row ${dangerClass} ${todayClass}" id="tx-${tx.id}">
+        <div class="flex items-center justify-between">
+          <span class="sim-row-date">${formatDate(tx.date)}</span>
+          <div class="flex gap-2 items-center">
+            <span class="type-chip ${typeClasses[tx.type]}">${typeLabels[tx.type]}</span>
+            ${statusBadge}
+          </div>
+        </div>
+        <div class="sim-row-desc">${desc}</div>
+        <div class="sim-row-bottom">
+          <span style="font-family:var(--mono);font-weight:700;color:${amtColor};">${amtSign}¥${tx.amount.toLocaleString()}</span>
+          ${afterDisplay}
+          <div class="flex gap-2">
+            ${completeBtn}
+            ${deleteBtn}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function selectSimBank(id) {
+  simSelectedBankId = id;
+  renderSimulation();
+}
+
+// ============================================================
+// ADD TRANSACTION
+// ============================================================
+function renderAddForm() {
+  const today = todayJST();
+  if (!document.getElementById('tx-date').value) {
+    document.getElementById('tx-date').value = today;
+  }
+  renderTypeFields();
+}
+
+function selectType(type) {
+  selectedType = type;
+  document.querySelectorAll('#type-tabs .tag').forEach(t => {
+    t.classList.toggle('active', t.dataset.type === type);
+  });
+  renderTypeFields();
+}
+
+function bankOptions(selectedId = '') {
+  return state.banks.map(b =>
+    `<option value="${b.id}" ${b.id === selectedId ? 'selected' : ''}>${b.name}</option>`
+  ).join('');
+}
+
+function renderTypeFields() {
+  const container = document.getElementById('type-fields');
+  let html = '';
+
+  switch(selectedType) {
+    case 'credit_card':
+      html = `
+        <div class="field">
+          <label>カード名</label>
+          <select id="tx-card">
+            ${state.cardTypes.map(c => `<option>${c}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field">
+          <label>引き落とし口座</label>
+          <select id="tx-bankId">${bankOptions()}</select>
+        </div>`;
+      break;
+    case 'withdrawal':
+      html = `
+        <div class="field">
+          <label>引き出し口座</label>
+          <select id="tx-bankId">${bankOptions()}</select>
+        </div>`;
+      break;
+    case 'income':
+      html = `
+        <div class="field">
+          <label>入金先口座</label>
+          <select id="tx-bankId">${bankOptions()}</select>
+        </div>
+        <div class="field">
+          <label>収入源</label>
+          <input type="text" id="tx-source" placeholder="例: 給与、仕送り">
+        </div>`;
+      break;
+    case 'transfer':
+      html = `
+        <div class="field">
+          <label>振替元口座</label>
+          <select id="tx-fromBankId">${bankOptions()}</select>
+        </div>
+        <div class="field">
+          <label>振替先口座</label>
+          <select id="tx-toBankId">${bankOptions()}</select>
+        </div>`;
+      break;
+    case 'investment':
+      html = `
+        <div class="field">
+          <label>引き落とし口座</label>
+          <select id="tx-bankId">${bankOptions()}</select>
+        </div>
+        <div class="field">
+          <label>入金先証券口座</label>
+          <select id="tx-brokerageId">
+            ${state.brokerages.map(br => `<option value="${br.id}">${br.name}</option>`).join('')}
+          </select>
+        </div>`;
+      break;
+  }
+  container.innerHTML = html;
+}
+
+function addTransaction() {
+  const date = document.getElementById('tx-date').value;
+  const amount = parseFloat(document.getElementById('tx-amount').value);
+
+  if (!date) { toast('⚠️ 日付を入力してください'); return; }
+  if (!amount || amount <= 0) { toast('⚠️ 金額を入力してください'); return; }
+
+  const tx = {
+    id: uid(),
+    date,
+    type: selectedType,
+    amount,
+    status: 'pending'
+  };
+
+  switch(selectedType) {
+    case 'credit_card':
+      tx.cardName = document.getElementById('tx-card')?.value || '';
+      tx.bankId = document.getElementById('tx-bankId')?.value || '';
+      if (!state.banks.find(b => b.id === tx.bankId)) { toast('⚠️ 口座を選択してください'); return; }
+      break;
+    case 'withdrawal':
+      tx.bankId = document.getElementById('tx-bankId')?.value || '';
+      if (!state.banks.find(b => b.id === tx.bankId)) { toast('⚠️ 口座を選択してください'); return; }
+      break;
+    case 'income':
+      tx.bankId = document.getElementById('tx-bankId')?.value || '';
+      tx.source = document.getElementById('tx-source')?.value || '収入';
+      if (!state.banks.find(b => b.id === tx.bankId)) { toast('⚠️ 口座を選択してください'); return; }
+      break;
+    case 'transfer':
+      tx.fromBankId = document.getElementById('tx-fromBankId')?.value || '';
+      tx.toBankId = document.getElementById('tx-toBankId')?.value || '';
+      if (tx.fromBankId === tx.toBankId) { toast('⚠️ 振替元と振替先が同じです'); return; }
+      break;
+    case 'investment':
+      tx.bankId = document.getElementById('tx-bankId')?.value || '';
+      tx.brokerageId = document.getElementById('tx-brokerageId')?.value || '';
+      if (!state.banks.find(b => b.id === tx.bankId)) { toast('⚠️ 口座を選択してください'); return; }
+      if (!state.brokerages.find(b => b.id === tx.brokerageId)) { toast('⚠️ 証券口座を選択してください'); return; }
+      break;
+  }
+
+  state.transactions.push(tx);
+  saveState();
+  toast('✅ 取引を追加しました');
+
+  // Reset amount
+  document.getElementById('tx-amount').value = '';
+}
+
+// ============================================================
+// COMPLETE TRANSACTION
+// ============================================================
+function completeTransaction(id) {
+  const tx = state.transactions.find(t => t.id === id);
+  if (!tx || tx.status === 'completed') return;
+
+  const bank = id2 => state.banks.find(b => b.id === id2);
+  const brok = id2 => state.brokerages.find(b => b.id === id2);
+
+  switch(tx.type) {
+    case 'credit_card':
+    case 'withdrawal':
+      if (bank(tx.bankId)) bank(tx.bankId).currentBalance -= tx.amount;
+      break;
+    case 'income':
+      if (bank(tx.bankId)) bank(tx.bankId).currentBalance += tx.amount;
+      break;
+    case 'transfer':
+      if (bank(tx.fromBankId)) bank(tx.fromBankId).currentBalance -= tx.amount;
+      if (bank(tx.toBankId)) bank(tx.toBankId).currentBalance += tx.amount;
+      break;
+    case 'investment':
+      if (bank(tx.bankId)) bank(tx.bankId).currentBalance -= tx.amount;
+      if (brok(tx.brokerageId)) brok(tx.brokerageId).totalInvestment += tx.amount;
+      break;
+  }
+
+  tx.status = 'completed';
+  saveState();
+  toast('✅ 取引を完了しました');
+  renderSimulation();
+}
+
+// ============================================================
+// DELETE TRANSACTION
+// ============================================================
+function deleteTransaction(id) {
+  if (!confirm('この取引を削除しますか？')) return;
+  state.transactions = state.transactions.filter(t => t.id !== id);
+  saveState();
+  toast('🗑️ 取引を削除しました');
+  renderSimulation();
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function renderSettings() {
+  // Banks
+  document.getElementById('bank-list-settings').innerHTML = state.banks.map(b => `
+    <div class="card-sm flex items-center justify-between">
+      <div>
+        <div style="font-weight:600;">${b.name}</div>
+        <div style="font-size:12px;color:var(--muted);font-family:var(--mono);">¥${b.currentBalance.toLocaleString()}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="deleteBank('${b.id}')" style="color:var(--danger);">削除</button>
+    </div>`).join('') || '<div style="color:var(--muted);font-size:13px;padding:8px 0;">口座がありません</div>';
+
+  // Cards
+  document.getElementById('card-list-settings').innerHTML = state.cardTypes.map((c, i) => `
+    <div class="card-sm flex items-center justify-between">
+      <div style="font-weight:600;">${c}</div>
+      <button class="btn btn-ghost btn-sm" onclick="deleteCard(${i})" style="color:var(--danger);">削除</button>
+    </div>`).join('') || '<div style="color:var(--muted);font-size:13px;padding:8px 0;">カードがありません</div>';
+
+  // Brokerages
+  document.getElementById('brokerage-list-settings').innerHTML = state.brokerages.map(br => `
+    <div class="card-sm flex items-center justify-between">
+      <div>
+        <div style="font-weight:600;">${br.name}</div>
+        <div style="font-size:12px;color:var(--muted);font-family:var(--mono);">評価: ¥${br.currentValuation.toLocaleString()}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="deleteBrokerage('${br.id}')" style="color:var(--danger);">削除</button>
+    </div>`).join('') || '<div style="color:var(--muted);font-size:13px;padding:8px 0;">証券口座がありません</div>';
+}
+
+function addBank() {
+  const name = document.getElementById('new-bank-name').value.trim();
+  const balance = parseFloat(document.getElementById('new-bank-balance').value) || 0;
+  if (!name) { toast('⚠️ 銀行名を入力してください'); return; }
+  state.banks.push({ id: uid(), name, currentBalance: balance });
+  saveState();
+  document.getElementById('new-bank-name').value = '';
+  document.getElementById('new-bank-balance').value = '';
+  renderSettings();
+  toast('✅ 銀行口座を追加しました');
+}
+
+function deleteBank(id) {
+  if (!confirm('この銀行口座を削除しますか？')) return;
+  state.banks = state.banks.filter(b => b.id !== id);
+  saveState();
+  renderSettings();
+  renderDashboard();
+  toast('🗑️ 削除しました');
+}
+
+function addCard() {
+  const name = document.getElementById('new-card-name').value.trim();
+  if (!name) { toast('⚠️ カード名を入力してください'); return; }
+  state.cardTypes.push(name);
+  saveState();
+  document.getElementById('new-card-name').value = '';
+  renderSettings();
+  toast('✅ カードを追加しました');
+}
+
+function deleteCard(idx) {
+  if (!confirm('このカードを削除しますか？')) return;
+  state.cardTypes.splice(idx, 1);
+  saveState();
+  renderSettings();
+  toast('🗑️ 削除しました');
+}
+
+function addBrokerage() {
+  const name = document.getElementById('new-brokerage-name').value.trim();
+  if (!name) { toast('⚠️ 証券会社名を入力してください'); return; }
+  state.brokerages.push({ id: uid(), name, totalInvestment: 0, currentValuation: 0 });
+  saveState();
+  document.getElementById('new-brokerage-name').value = '';
+  renderSettings();
+  toast('✅ 証券口座を追加しました');
+}
+
+function deleteBrokerage(id) {
+  if (!confirm('この証券口座を削除しますか？')) return;
+  state.brokerages = state.brokerages.filter(b => b.id !== id);
+  saveState();
+  renderSettings();
+  renderDashboard();
+  toast('🗑️ 削除しました');
+}
+
+function clearAllData() {
+  if (!confirm('全データを削除しますか？この操作は元に戻せません。')) return;
+  if (!confirm('本当によろしいですか？')) return;
+  localStorage.removeItem('cashflow_data');
+  state = {
+    banks: [],
+    cardTypes: ['MUFG NICOS', 'SMBC NL', 'EPOS', 'JCB W'],
+    brokerages: [
+      { id: uid(), name: '松井証券', totalInvestment: 0, currentValuation: 0 },
+      { id: uid(), name: 'SBI証券', totalInvestment: 0, currentValuation: 0 }
+    ],
+    transactions: []
+  };
+  saveState();
+  renderSettings();
+  renderDashboard();
+  toast('🗑️ 全データを削除しました');
+}
+
+// ============================================================
+// MODAL: Edit Balance
+// ============================================================
+let modalCallback = null;
+
+function openEditBank(id) {
+  const bank = state.banks.find(b => b.id === id);
+  if (!bank) return;
+  document.getElementById('modal-edit-title').textContent = `${bank.name} — 残高更新`;
+  document.getElementById('modal-balance-input').value = bank.currentBalance;
+  document.getElementById('modal-extra-fields').innerHTML = '';
+  document.getElementById('modal-save-btn').onclick = () => {
+    const val = parseFloat(document.getElementById('modal-balance-input').value);
+    if (isNaN(val)) { toast('⚠️ 数値を入力してください'); return; }
+    bank.currentBalance = val;
+    saveState();
+    closeModal();
+    renderDashboard();
+    toast('✅ 残高を更新しました');
+  };
+  openModal();
+}
+
+function openEditBrokerage(id) {
+  const br = state.brokerages.find(b => b.id === id);
+  if (!br) return;
+  document.getElementById('modal-edit-title').textContent = `${br.name} — 評価額更新`;
+  document.getElementById('modal-balance-input').value = br.currentValuation;
+  document.getElementById('modal-extra-fields').innerHTML = `
+    <div class="field">
+      <label>累計入金額（参考）</label>
+      <input type="number" id="modal-investment-input" value="${br.totalInvestment}" placeholder="0">
+    </div>`;
+  document.getElementById('modal-save-btn').onclick = () => {
+    const val = parseFloat(document.getElementById('modal-balance-input').value);
+    const inv = parseFloat(document.getElementById('modal-investment-input').value);
+    if (isNaN(val)) { toast('⚠️ 数値を入力してください'); return; }
+    br.currentValuation = val;
+    if (!isNaN(inv)) br.totalInvestment = inv;
+    saveState();
+    closeModal();
+    renderDashboard();
+    toast('✅ 評価額を更新しました');
+  };
+  openModal();
+}
+
+function openModal() {
+  document.getElementById('modal-edit-balance').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-edit-balance').classList.remove('open');
+}
+
+// Close modal on overlay click
+document.getElementById('modal-edit-balance').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ============================================================
+// EXPORT / IMPORT
+// ============================================================
+function exportData() {
+  const json = JSON.stringify(state, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `cashflow_${todayJST()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('📤 エクスポートしました');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!imported.transactions || !imported.banks) {
+        toast('⚠️ 無効なデータです');
+        return;
+      }
+      if (!confirm('現在のデータを上書きしますか？')) return;
+      state = imported;
+      // Ensure required arrays
+      if (!state.cardTypes) state.cardTypes = [];
+      if (!state.brokerages) state.brokerages = [];
+      saveState();
+      renderDashboard();
+      toast('✅ インポートしました');
+    } catch(err) {
+      toast('⚠️ JSONの解析に失敗しました');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ============================================================
+// SERVICE WORKER REGISTRATION
+// ============================================================
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// ============================================================
+// INIT
+// ============================================================
+loadState();
+renderDashboard();
+renderAddForm();
+</script>
+</body>
+</html>
